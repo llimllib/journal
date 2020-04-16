@@ -1,0 +1,14 @@
+<html>
+  <head>
+    <title>llimllib's journal</title>
+  </head>
+  <body>
+    <ul>
+    {{ range .Posts }}
+    <div>
+      {{- .HTML }}
+    </div>
+    {{ end }}
+    </ul>
+  </body>
+</html>
