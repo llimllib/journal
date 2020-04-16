@@ -4,11 +4,29 @@
   </head>
   <body>
     <ul>
-    {{ range .Posts }}
+    {{range .Posts}}
     <div>
-      {{- .HTML }}
+      {{if eq .Typ "quote"}}
+      <blockquote>
+        {{.QuoteBody}}
+      </blockquote>
+      <div>
+        - {{.QuoteSource}}
+      </div>
+      {{else if eq .Typ "photo"}}
+        <div>
+          <img src="{{.BiggestImage}}" />
+        </div>
+        </div>
+        <div>
+          {{.PhotoCaption}}
+        </div>
+        <div>
+          {{.PhotoLink}}
+        </div>
+      {{end}}
     </div>
-    {{ end }}
+    {{end}}
     </ul>
   </body>
 </html>
