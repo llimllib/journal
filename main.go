@@ -1,6 +1,10 @@
 package main
 
 // TODO: handle panics
+// TODO: handle permalinks
+// TODO: paging
+// TODO: handle tags
+//       * honestly not sure I have enough to even care
 
 import (
 	"database/sql"
@@ -88,6 +92,9 @@ func mustItoa(s string) int {
 	return i
 }
 
+// BiggestImage returns the biggest image of the PhotoURLs array.
+// From a brief scan of my posts, I guess you can only post one image per
+// tumblr post
 func (p *Post) BiggestImage() string {
 	max := 0
 	biggestImage := ""
@@ -117,30 +124,7 @@ func (s *JournalServer) start() {
 	log.Fatal(http.ListenAndServe(addr, nil))
 }
 
-func (s *JournalServer) loadQuote(id string) string {
-	stmt, err := s.database.Prepare("SELECT body, source FROM quote_posts WHERE id=?")
-	if err != nil {
-		log.Printf("Failed to serve: %s", err.Error())
-		return ""
-	}
-	defer stmt.Close()
-
-	var body, source string
-	err = stmt.QueryRow(id).Scan(&body, &source)
-	if err != nil {
-		log.Printf("Failed to query: %s", err.Error())
-		return ""
-	}
-
-	return "<blockquote>" + body + "</blockquote>\n" + source
-
-}
-
 func (s *JournalServer) handle(w http.ResponseWriter, r *http.Request) {
-	// TODO: handle permalinks
-	// TODO: paging
-	// TODO: get photo URLs and tags
-	//       * doing group_concat seemed to return all of them instead of just the matching ones, not quite sure why
 	rows, err := s.database.Query(`
 		SELECT p.id, p.date, p.type, qp.body quote_body, qp.source
 		  quote_source, pp.caption photo_caption, pp.link photo_link, tp.title
