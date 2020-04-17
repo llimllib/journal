@@ -1,4 +1,5 @@
 import os
+import sys
 import xml.etree.ElementTree as ET
 import sqlite3
 
@@ -182,8 +183,8 @@ def main(db):
 
 
 if __name__ == "__main__":
-    os.unlink("posts.sqlite3")
-    with sqlite3.connect("posts.sqlite3") as db:
+    f = sys.argv[1]
+    with sqlite3.connect(f) as db:
         initdb(db)
         main(db)
         query(db, "CREATE INDEX posts_by_date ON posts(date, id);")

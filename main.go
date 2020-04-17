@@ -24,7 +24,7 @@ import (
 
 func logreq(f func(w http.ResponseWriter, r *http.Request)) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("%s", r.URL.Path)
+		log.Printf("|%s", r.URL.Path)
 
 		f(w, r)
 	})
