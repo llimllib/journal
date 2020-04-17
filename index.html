@@ -7,6 +7,7 @@ body {
   font-size: 26px;
   line-height: 1.45;
   color: black;
+  margin-bottom: 200px;
 }
 .center {
   display: block;
@@ -55,11 +56,12 @@ hr {
           <a href="{{.LinkURL}}">{{.LinkText}}</a>
         </div>
         <div>
-          {{.LinkDescription}}
+          {{.LinkDesc}}
         </div>
         {{end}}
       </div>
       {{end}}
+      <a href="?page={{.NextPage}}">next</a>
     </div>
   </body>
 </html>

@@ -2,9 +2,11 @@ package main
 
 // TODO: handle panics
 // TODO: handle permalinks
+//       * link them
 // TODO: paging
 // TODO: handle tags
 //       * honestly not sure I have enough to even care
+// TODO: audio and video
 
 import (
 	"database/sql"
@@ -84,7 +86,7 @@ type Post struct {
 
 var szre = regexp.MustCompile(`_(\d+)[\w]*\.`)
 
-func mustItoa(s string) int {
+func mustAtoi(s string) int {
 	i, err := strconv.Atoi(s)
 	if err != nil {
 		panic(err)
@@ -100,7 +102,7 @@ func (p *Post) BiggestImage() string {
 	biggestImage := ""
 	for _, im := range p.PhotoURLs {
 		res := szre.FindSubmatch([]byte(im))
-		sz := mustItoa(string(res[1]))
+		sz := mustAtoi(string(res[1]))
 		if sz > max {
 			max = sz
 			biggestImage = im
@@ -125,8 +127,14 @@ func (s *JournalServer) start() {
 }
 
 func (s *JournalServer) handle(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.database.Query(`
-		SELECT p.id, p.date, p.type, qp.body quote_body, qp.source
+	pagecount := 10
+	page := 0
+	pageParam := r.URL.Query()["page"]
+	if len(pageParam) > 0 {
+		page = mustAtoi(pageParam[0])
+	}
+	offset := page * pagecount
+	query := fmt.Sprintf(`SELECT p.id, p.date, p.type, qp.body quote_body, qp.source
 		  quote_source, pp.caption photo_caption, pp.link photo_link, tp.title
 		  text_title, tp.body text_body, lp.url link_url, lp.text link_text,
 		  lp.desc link_desc, vp.source video_source, vp.caption video_caption,
@@ -141,15 +149,20 @@ func (s *JournalServer) handle(w http.ResponseWriter, r *http.Request) {
 		LEFT JOIN audio_posts ap ON p.id=ap.id
 		GROUP BY p.id
 		ORDER BY p.date desc
-		LIMIT 5
-	`)
+		LIMIT %d
+		OFFSET %d`, pagecount, offset)
+	log.Print(query)
+
+	rows, err := s.database.Query(query)
 	if err != nil {
 		log.Printf("Failed to serve: %s", err.Error())
+		panic(err)
 	}
 	defer rows.Close()
 
 	data := struct {
-		Posts []Post
+		Posts    []Post
+		NextPage int
 	}{}
 	for rows.Next() {
 		var id, dt, typ, quoteBody, quoteSource, photoCaption, photoLink, photoURLs, textTitle, textBody, linkURL, linkText, linkDesc, videoSource, videoCaption, audioPlayer, audioCaption sql.NullString
@@ -179,6 +192,7 @@ func (s *JournalServer) handle(w http.ResponseWriter, r *http.Request) {
 			AudioCaption: audioCaption.String,
 		}
 		data.Posts = append(data.Posts, post)
+		data.NextPage = page + 1
 	}
 
 	err = homeTemplate.Execute(w, data)
