@@ -158,7 +158,7 @@ handlers = {
 
 
 def main(db):
-    posts = ET.parse("posts.xml").findall(".//post")
+    posts = ET.parse("tumblr_backup/posts.xml").findall(".//post")
 
     for post in posts:
         typ = post.attrib["type"]
