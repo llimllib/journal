@@ -2,27 +2,47 @@
   <head>
     <title>llimllib's journal</title>
 <style>
-  body {
-    max-width: 1200;
-    margin: auto;
-  }
+body {
+  font-family: Georgia, 'Nimbus Roman No9 L', 'Century Schoolbook L', serif;
+  font-size: 26px;
+  line-height: 1.45;
+  color: black;
+}
+.center {
+  display: block;
+  box-sizing: border-box;
+  max-width: 800px;
+  margin: auto;
+}
+img {
+  width: 100%;
+  height: auto;
+}
+.post {
+  margin-top: 50px;
+  margin-bottom: 100px;
+}
+hr {
+  width: 25%
+}
 </style>
   </head>
   <body>
-    <ul>
-    {{range .Posts}}
-    <div>
-      {{if eq .Typ "quote"}}
-      <blockquote>
-        {{.QuoteBody}}
-      </blockquote>
-      <div>
-        - {{.QuoteSource}}
-      </div>
-      {{else if eq .Typ "photo"}}
+    <div class="center">
+      {{range $i, $post := .Posts}}
+      {{if $i}}
+      <hr>
+      {{end}}
+      <div class="post">
+        {{if eq .Typ "quote"}}
+        <blockquote>
+          {{.QuoteBody}}
+        </blockquote>
+        <div>
+          - {{.QuoteSource}} </div>
+        {{else if eq .Typ "photo"}}
         <div>
           <img src="{{.BiggestImage}}" />
-        </div>
         </div>
         <div>
           {{.PhotoCaption}}
@@ -30,9 +50,16 @@
         <div>
           {{.PhotoLink}}
         </div>
+        {{else if eq .Typ "link"}}
+        <div>
+          <a href="{{.LinkURL}}">{{.LinkText}}</a>
+        </div>
+        <div>
+          {{.LinkDescription}}
+        </div>
+        {{end}}
+      </div>
       {{end}}
     </div>
-    {{end}}
-    </ul>
   </body>
 </html>

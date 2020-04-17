@@ -5,7 +5,6 @@ package main
 // TODO: paging
 // TODO: handle tags
 //       * honestly not sure I have enough to even care
-// TODO: reaosnable CSS
 
 import (
 	"database/sql"
