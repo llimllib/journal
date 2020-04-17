@@ -3,7 +3,6 @@ package main
 // TODO: handle panics
 // TODO: handle permalinks
 //       * link them
-// TODO: paging
 // TODO: handle tags
 //       * honestly not sure I have enough to even care
 // TODO: audio and video
@@ -126,7 +125,7 @@ func (s *JournalServer) start() {
 	log.Fatal(http.ListenAndServe(addr, nil))
 }
 
-func (s *JournalServer) handle(w http.ResponseWriter, r *http.Request) {
+func (s *JournalServer) index(w http.ResponseWriter, r *http.Request) {
 	pagecount := 10
 	page := 0
 	pageParam := r.URL.Query()["page"]
@@ -198,6 +197,17 @@ func (s *JournalServer) handle(w http.ResponseWriter, r *http.Request) {
 	err = homeTemplate.Execute(w, data)
 	if err != nil {
 		panic(err)
+	}
+}
+
+func (s *JournalServer) permalink() {
+}
+
+func (s *JournalServer) handle(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path == "/" {
+		s.index(w, r)
+	} else {
+		s.permalink()
 	}
 }
 

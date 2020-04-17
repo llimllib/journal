@@ -23,8 +23,10 @@ img {
   margin-top: 50px;
   margin-bottom: 100px;
 }
-hr {
-  width: 25%
+.hr {
+  width: 25%;
+  border-top: 1px solid rgba(0,0,0,.3);
+  margin: auto;
 }
 </style>
   </head>
@@ -32,7 +34,7 @@ hr {
     <div class="center">
       {{range $i, $post := .Posts}}
       {{if $i}}
-      <hr>
+      <div class="hr"></div>
       {{end}}
       <div class="post">
         {{if eq .Typ "quote"}}
