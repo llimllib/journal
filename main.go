@@ -1,10 +1,9 @@
 package main
 
-// TODO: handle permalinks
-//       * link them
 // TODO: handle tags
 //       * honestly not sure I have enough to even care
 // TODO: audio and video
+// TODO: allow myself to make new entries?
 
 import (
 	"database/sql"
