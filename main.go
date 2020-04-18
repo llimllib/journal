@@ -34,7 +34,7 @@ func handlepanic(f func(w http.ResponseWriter, r *http.Request)) http.HandlerFun
 		defer func() {
 			if err := recover(); err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				log.Printf("Panic recovered: %v", r)
+				log.Printf("Panic recovered: %v", err)
 			}
 		}()
 
@@ -115,6 +115,10 @@ func (p *Post) BiggestImage() string {
 	biggestImage := ""
 	for _, im := range p.PhotoURLs {
 		res := szre.FindSubmatch([]byte(im))
+		if len(res) < 2 {
+			log.Printf("Failed to find a resolution in %s", im)
+			continue
+		}
 		sz := mustAtoi(string(res[1]))
 		if sz > max {
 			max = sz
