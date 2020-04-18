@@ -1,6 +1,5 @@
 package main
 
-// TODO: handle panics
 // TODO: handle permalinks
 //       * link them
 // TODO: handle tags
@@ -23,9 +22,22 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func logreq(f func(w http.ResponseWriter, r *http.Request)) http.Handler {
+func logreq(f func(w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("|%s", r.URL.Path)
+
+		f(w, r)
+	})
+}
+
+func handlepanic(f func(w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				log.Printf("Panic recovered: %v", r)
+			}
+		}()
 
 		f(w, r)
 	})
@@ -83,7 +95,10 @@ type Post struct {
 	AudioCaption string
 }
 
-var szre = regexp.MustCompile(`_(\d+)[\w]*\.`)
+var (
+	szre        = regexp.MustCompile(`_(\d+)[\w]*\.`)
+	permalinkre = regexp.MustCompile(`post/(\w+)/?`)
+)
 
 func mustAtoi(s string) int {
 	i, err := strconv.Atoi(s)
@@ -119,7 +134,7 @@ type JournalServer struct {
 func (s *JournalServer) start() {
 	defer s.database.Close()
 
-	http.Handle("/", logreq(s.handle))
+	http.Handle("/", handlepanic(logreq(s.handle)))
 	addr := fmt.Sprintf("%s:%s", s.host, s.port)
 	log.Printf("Serving on %s:%s", s.host, s.port)
 	log.Fatal(http.ListenAndServe(addr, nil))
@@ -133,7 +148,7 @@ func (s *JournalServer) index(w http.ResponseWriter, r *http.Request) {
 		page = mustAtoi(pageParam[0])
 	}
 	offset := page * pagecount
-	query := fmt.Sprintf(`SELECT p.id, p.date, p.type, qp.body quote_body, qp.source
+	query := `SELECT p.id, p.date, p.type, qp.body quote_body, qp.source
 		  quote_source, pp.caption photo_caption, pp.link photo_link, tp.title
 		  text_title, tp.body text_body, lp.url link_url, lp.text link_text,
 		  lp.desc link_desc, vp.source video_source, vp.caption video_caption,
@@ -148,11 +163,11 @@ func (s *JournalServer) index(w http.ResponseWriter, r *http.Request) {
 		LEFT JOIN audio_posts ap ON p.id=ap.id
 		GROUP BY p.id
 		ORDER BY p.date desc
-		LIMIT %d
-		OFFSET %d`, pagecount, offset)
-	log.Print(query)
+		LIMIT ? 
+		OFFSET ?`
+	log.Print(query, pagecount, offset)
 
-	rows, err := s.database.Query(query)
+	rows, err := s.database.Query(query, pagecount, offset)
 	if err != nil {
 		log.Printf("Failed to serve: %s", err.Error())
 		panic(err)
@@ -200,14 +215,73 @@ func (s *JournalServer) index(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *JournalServer) permalink() {
+func (s *JournalServer) permalink(w http.ResponseWriter, r *http.Request) {
+	postID := string(permalinkre.FindSubmatch([]byte(r.URL.Path))[1])
+	query := `SELECT p.id, p.date, p.type, qp.body quote_body, qp.source
+		  quote_source, pp.caption photo_caption, pp.link photo_link, tp.title
+		  text_title, tp.body text_body, lp.url link_url, lp.text link_text,
+		  lp.desc link_desc, vp.source video_source, vp.caption video_caption,
+		  ap.player audio_player, ap.caption audio_caption, group_concat(pu.url)
+		FROM posts p
+		LEFT JOIN quote_posts qp ON p.id=qp.id
+		LEFT JOIN photo_posts pp ON p.id=pp.id
+		LEFT JOIN photo_urls pu on pu.id=p.id
+		LEFT JOIN text_posts tp ON p.id=tp.id
+		LEFT JOIN link_posts lp ON p.id=lp.id
+		LEFT JOIN video_posts vp ON p.id=vp.id
+		LEFT JOIN audio_posts ap ON p.id=ap.id
+		WHERE p.id=?
+		GROUP BY p.id`
+	log.Print(query, postID)
+
+	var id, dt, typ, quoteBody, quoteSource, photoCaption, photoLink, photoURLs, textTitle, textBody, linkURL, linkText, linkDesc, videoSource, videoCaption, audioPlayer, audioCaption sql.NullString
+	stmt, err := s.database.Prepare(query)
+	if err != nil {
+		panic(err)
+	}
+
+	err = stmt.QueryRow(postID).Scan(&id, &dt, &typ, &quoteBody, &quoteSource, &photoCaption, &photoLink, &textTitle, &textBody, &linkURL, &linkText, &linkDesc, &videoSource, &videoCaption, &audioPlayer, &audioCaption, &photoURLs)
+	if err != nil {
+		panic(err)
+	}
+
+	data := struct {
+		Posts    []Post
+		NextPage int
+	}{}
+
+	post := Post{
+		ID:           id.String,
+		Dt:           dt.String,
+		Typ:          typ.String,
+		QuoteBody:    quoteBody.String,
+		QuoteSource:  quoteSource.String,
+		PhotoCaption: photoCaption.String,
+		PhotoLink:    photoLink.String,
+		PhotoURLs:    strings.Split(photoURLs.String, ","),
+		TextTitle:    textTitle.String,
+		TextBody:     textBody.String,
+		LinkURL:      linkURL.String,
+		LinkText:     linkText.String,
+		LinkDesc:     linkDesc.String,
+		VideoSource:  videoSource.String,
+		VideoCaption: videoCaption.String,
+		AudioPlayer:  audioPlayer.String,
+		AudioCaption: audioCaption.String,
+	}
+	data.Posts = append(data.Posts, post)
+
+	err = homeTemplate.Execute(w, data)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (s *JournalServer) handle(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/" {
 		s.index(w, r)
 	} else {
-		s.permalink()
+		s.permalink(w, r)
 	}
 }
 

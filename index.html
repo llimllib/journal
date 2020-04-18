@@ -28,6 +28,14 @@ img {
   border-top: 1px solid rgba(0,0,0,.3);
   margin: auto;
 }
+.permalink {
+  margin-top:10px;
+  font-size: 20px;
+  font-style: italic;
+}
+.permalink a:link, .permalink a:visited {
+  color: rgba(0, 0, 200, .5);
+}
 </style>
   </head>
   <body>
@@ -51,7 +59,7 @@ img {
           {{.PhotoCaption}}
         </div>
         <div>
-          {{.PhotoLink}}
+          <a href="{{.PhotoLink}}">{{.PhotoLink}}</a>
         </div>
         {{else if eq .Typ "link"}}
         <div>
@@ -61,9 +69,12 @@ img {
           {{.LinkDesc}}
         </div>
         {{end}}
+        <div class="permalink"><a href="./post/{{.ID}}">#link</a></div>
       </div>
       {{end}}
-      <a href="?page={{.NextPage}}">next</a>
+      {{if ne .NextPage 0}}
+        <a href="?page={{.NextPage}}">next</a>
+      {{end}}
     </div>
   </body>
 </html>
