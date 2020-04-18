@@ -34,7 +34,7 @@ img {
   font-style: italic;
 }
 .permalink a:link, .permalink a:visited {
-  color: rgba(0, 0, 200, .5);
+  color: rgba(50, 50, 50, .5);
 }
 </style>
   </head>
@@ -69,7 +69,7 @@ img {
           {{.LinkDesc}}
         </div>
         {{end}}
-        <div class="permalink"><a href="./post/{{.ID}}">#link</a></div>
+        <div class="permalink"><a href="./post/{{.ID}}">{{.Dt}}</a></div>
       </div>
       {{end}}
       {{if ne .NextPage 0}}
