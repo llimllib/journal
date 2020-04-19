@@ -15,7 +15,7 @@ body {
   max-width: 800px;
   margin: auto;
 }
-img {
+.post img {
   width: 100%;
   height: auto;
 }
@@ -36,6 +36,10 @@ img {
 .permalink a:link, .permalink a:visited {
   color: rgba(50, 50, 50, .5);
 }
+.logo {
+  margin-left: 20px;
+  margin-top: 50px;
+}
 </style>
 <!-- Matomo metrics -->
 <script type="text/javascript">
@@ -53,6 +57,11 @@ img {
 </script>
   </head>
   <body>
+    <div class="logo">
+      <a href="https://billmill.org" class="logo">
+        <img src="https://billmill.org/images/logo.png" width="136" height="94">
+      </a>
+    </div>
     <div class="center">
       {{range $i, $post := .Posts}}
       {{if $i}}
