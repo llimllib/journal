@@ -159,7 +159,7 @@ func (s *JournalServer) index(w http.ResponseWriter, r *http.Request) {
 		FROM posts p
 		LEFT JOIN quote_posts qp ON p.id=qp.id
 		LEFT JOIN photo_posts pp ON p.id=pp.id
-		LEFT JOIN photo_urls pu on pu.id=p.id
+		LEFT JOIN photo_urls pu ON pu.id=p.id
 		LEFT JOIN text_posts tp ON p.id=tp.id
 		LEFT JOIN link_posts lp ON p.id=lp.id
 		LEFT JOIN video_posts vp ON p.id=vp.id
@@ -228,7 +228,7 @@ func (s *JournalServer) permalink(w http.ResponseWriter, r *http.Request) {
 		FROM posts p
 		LEFT JOIN quote_posts qp ON p.id=qp.id
 		LEFT JOIN photo_posts pp ON p.id=pp.id
-		LEFT JOIN photo_urls pu on pu.id=p.id
+		LEFT JOIN photo_urls pu ON pu.id=p.id
 		LEFT JOIN text_posts tp ON p.id=tp.id
 		LEFT JOIN link_posts lp ON p.id=lp.id
 		LEFT JOIN video_posts vp ON p.id=vp.id
