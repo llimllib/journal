@@ -18,7 +18,7 @@ import (
 	"strings"
 	"text/template"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 type LogLevel int64
@@ -331,7 +331,7 @@ func main() {
 	flag.StringVar(&database, "database", "posts.sqlite3", "database to serve from")
 	flag.Parse()
 
-	db, err := sql.Open("sqlite3", database)
+	db, err := sql.Open("sqlite", database)
 	if err != nil {
 		panic(err)
 	}

@@ -12,5 +12,5 @@ trap "mv journal-local journal" EXIT
 # KEY is the location of the keyfile to use to log in
 # TARGET is user@hostname
 ssh -i "$KEY" "$TARGET" sudo systemctl stop llimllib-journal
-rsync -e "ssh -i $KEY" journal index.html "$TARGET:/srv/journal/"
+rsync --progress -e "ssh -i $KEY" journal index.html "$TARGET:/srv/journal/"
 ssh -i "$KEY" "$TARGET" sudo systemctl start llimllib-journal
