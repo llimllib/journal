@@ -21,9 +21,39 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+type LogLevel int64
+
+const (
+	LEVEL_ERROR LogLevel = iota
+	LEVEL_INFO
+	LEVEL_DEBUG
+)
+
+// set to LEVEL_DEBUG to enable query logging
+var LOG_LEVEL = LEVEL_INFO
+
+// The worlds simplest levelled logging wrapper
+func debug(format string, v ...interface{}) {
+	if LOG_LEVEL >= LEVEL_DEBUG {
+		log.Printf(format, v...)
+	}
+}
+
+func info(format string, v ...interface{}) {
+	if LOG_LEVEL >= LEVEL_INFO {
+		log.Printf(format, v...)
+	}
+}
+
+func errlog(format string, v ...interface{}) {
+	if LOG_LEVEL >= LEVEL_ERROR {
+		log.Printf(format, v...)
+	}
+}
+
 func logreq(f func(w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("|%s", r.URL.Path)
+		info("|%s", r.URL.Path)
 
 		f(w, r)
 	})
@@ -34,7 +64,7 @@ func handlepanic(f func(w http.ResponseWriter, r *http.Request)) http.HandlerFun
 		defer func() {
 			if err := recover(); err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				log.Printf("Panic recovered: %v", err)
+				errlog("Panic recovered: %v", err)
 			}
 		}()
 
@@ -116,7 +146,7 @@ func (p *Post) BiggestImage() string {
 	for _, im := range p.PhotoURLs {
 		res := szre.FindSubmatch([]byte(im))
 		if len(res) < 2 {
-			log.Printf("Failed to find a resolution in %s", im)
+			errlog("Failed to find a resolution in %s", im)
 			continue
 		}
 		sz := mustAtoi(string(res[1]))
@@ -139,7 +169,7 @@ func (s *JournalServer) start() {
 
 	http.Handle("/", handlepanic(logreq(s.handle)))
 	addr := fmt.Sprintf("%s:%s", s.host, s.port)
-	log.Printf("Serving on %s:%s", s.host, s.port)
+	info("Serving on %s:%s", s.host, s.port)
 	log.Fatal(http.ListenAndServe(addr, nil))
 }
 
@@ -168,11 +198,11 @@ func (s *JournalServer) index(w http.ResponseWriter, r *http.Request) {
 		ORDER BY p.date desc
 		LIMIT ? 
 		OFFSET ?`
-	log.Print(query, pagecount, offset)
+	debug(query, pagecount, offset)
 
 	rows, err := s.database.Query(query, pagecount, offset)
 	if err != nil {
-		log.Printf("Failed to serve: %s", err.Error())
+		errlog("Failed to serve: %s", err.Error())
 		panic(err)
 	}
 	defer rows.Close()
@@ -235,7 +265,7 @@ func (s *JournalServer) permalink(w http.ResponseWriter, r *http.Request) {
 		LEFT JOIN audio_posts ap ON p.id=ap.id
 		WHERE p.id=?
 		GROUP BY p.id`
-	log.Print(query, postID)
+	debug(query, postID)
 
 	var id, dt, typ, quoteBody, quoteSource, photoCaption, photoLink, photoURLs, textTitle, textBody, linkURL, linkText, linkDesc, videoSource, videoCaption, audioPlayer, audioCaption sql.NullString
 	stmt, err := s.database.Prepare(query)
@@ -281,9 +311,12 @@ func (s *JournalServer) permalink(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *JournalServer) handle(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path == "/" {
+	switch r.URL.Path {
+	case "/":
 		s.index(w, r)
-	} else {
+	case "/favicon.ico":
+		w.WriteHeader(http.StatusNotFound)
+	default:
 		s.permalink(w, r)
 	}
 }
